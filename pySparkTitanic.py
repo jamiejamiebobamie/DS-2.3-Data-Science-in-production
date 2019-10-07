@@ -62,3 +62,57 @@ df.describe().show()
 
 df.select('Embarked').distinct().show()
 df.agg(*(countDistinct(col(c)).alias(c) for c in df.columns)).show()
+
+
+histogram_of_genders = {'male':0,'female':0}
+
+for row in df.collect():
+    if row.Sex:
+        histogram_of_genders[row.Sex]+=1
+
+print(histogram_of_genders)
+
+average_age_of_men = 0
+average_age_of_women = 0
+
+men_count = 0
+women_count = 0
+
+for row in df_only_C.collect():
+    if row.Sex == 'female':
+        if row.Age:
+            women_count+=1
+            average_age_of_women += row.Age
+    else:
+        if row.Sex == 'male':
+            if row.Age:
+                men_count+=1
+                average_age_of_men += row.Age
+
+average_age_of_men /= men_count
+average_age_of_women /= women_count
+
+
+print("men: "+str(average_age_of_men)+" women: "+str(average_age_of_women))
+
+
+woman_ages = []
+man_ages = []
+max_man_age = float('-inf')
+max_woman_age = float('-inf')
+for row in df_only_C.collect():
+    if row.Sex == 'female':
+        if row.Age:
+            if row.Age > max_woman_age:
+                max_woman_age = row.Age
+            # max_woman_age = max(max_woman_age, row.Age)
+    else:
+        if row.Sex == 'male':
+            if row.Age:
+                if row.Age > max_man_age:
+                    max_man_age = row.Age
+                # man_ages.append(row.Age)
+                # max_man_age = max(max_man_age, row.Age)
+
+
+print("men: "+str(max_man_age)+" women: "+str(max_woman_age))
