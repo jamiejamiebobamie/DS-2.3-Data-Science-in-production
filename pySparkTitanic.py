@@ -14,7 +14,8 @@ df = spark.read.csv('./datasets/titanic.csv',header=True, inferSchema = True)
 
 df.show(10)
 
-print((df.count(), len(df.columns)))
+shape = (df.count(), len(df.columns))
+print(shape)
 
 
 """
@@ -36,25 +37,28 @@ embarked        Port of Embarkation
 """
 
 # how many of Age values are null
-from pyspark.sql.functions import isnan, when, count, col
-df.select([count(when(isnan(c), c)).alias(c) for c in df.columns]).show()
+from pyspark.sql.functions import *
+df.select([count(when(isnan(c) | col(c).isNull(), c)).alias(c) for c in df.columns]).show()
+
+# create a new column as gender, when Sex is female it is zero when sex is male it is one
+df\
+.withColumn('Gender',when(df.Sex == 'male',1).otherwise(0))\
+.show(10)
+
+shape = (df.count(), len(df.columns))
+print(shape)
+
+# List all of the Ages that are not null
+df_not_null_ages = df.filter(df.Age.isNotNull())
+df_not_null_ages.show(10)
 
 
-# df = df.drop('_c0')
-#
-# regressionDataFrame.show(10)
-#
-# regressionDataRDD = regressionDataFrame.rdd.map(list)
-#
-#
-# regressionDataLabelPoint = regressionDataRDD.map(lambda data : LabeledPoint(data[3], data[0:3]))
-#
-# regressionLabelPointSplit = regressionDataLabelPoint.randomSplit([0.7, 0.3])
-#
-# regressionLabelPointTrainData = regressionLabelPointSplit[0]
-#
-# regressionLabelPointTestData = regressionLabelPointSplit[1]
-#
-#
-# ourModelWithLinearRegression  = lrSGD.train(data = regressionLabelPointTrainData,
-#                                             iterations = 200, step = 0.02, intercept = True)
+# Slice the dataframe for those whose Embarked section was 'C'
+df_only_C = df.filter(df.Embarked == 'C')
+df_only_C.show(10)
+
+# Describe a specific column
+df.describe().show()
+
+df.select('Embarked').distinct().show()
+df.agg(*(countDistinct(col(c)).alias(c) for c in df.columns)).show()
